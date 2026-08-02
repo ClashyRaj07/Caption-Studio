@@ -1,0 +1,9 @@
+{
+  "name": "caption-studio",
+  "version": "1.0.0",
+  "description": "Browser-based animated video caption generator",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  }
+}
