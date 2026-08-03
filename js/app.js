@@ -53,6 +53,7 @@ const els = {
   fsContainer: $('#fsContainer'),
   transcriptBox: $('#transcriptBox'),
   styleGrid: $('#styleGrid'),
+  styleSearchInput: $('#styleSearchInput'),
   controls: $('#controls'),
   exportBtn: $('#exportBtn'),
   steps: [...document.querySelectorAll('.step')],
@@ -179,6 +180,47 @@ const overlayCtx = els.overlay.getContext('2d');
 let fontsReady = false;
 (document.fonts?.ready || Promise.resolve()).then(() => { fontsReady = true; });
 
+const GOOGLE_FONTS = [
+  { name: 'Space Grotesk (Default)', value: 'Space Grotesk, sans-serif' },
+  { name: 'Inter', value: 'Inter, sans-serif' },
+  { name: 'JetBrains Mono', value: 'JetBrains Mono, monospace' },
+  { name: 'Montserrat', value: 'Montserrat, sans-serif' },
+  { name: 'Poppins', value: 'Poppins, sans-serif' },
+  { name: 'Oswald', value: 'Oswald, sans-serif' },
+  { name: 'Bebas Neue', value: 'Bebas Neue, sans-serif' },
+  { name: 'Outfit', value: 'Outfit, sans-serif' },
+  { name: 'Roboto', value: 'Roboto, sans-serif' },
+  { name: 'Raleway', value: 'Raleway, sans-serif' },
+  { name: 'Playfair Display', value: 'Playfair Display, serif' },
+  { name: 'Anton', value: 'Anton, sans-serif' },
+  { name: 'Pacifico', value: 'Pacifico, cursive' },
+  { name: 'Syne', value: 'Syne, sans-serif' },
+  { name: 'Lora', value: 'Lora, serif' },
+  { name: 'Cinzel', value: 'Cinzel, serif' },
+  { name: 'Rubik', value: 'Rubik, sans-serif' },
+  { name: 'Righteous', value: 'Righteous, sans-serif' },
+  { name: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans, sans-serif' },
+  { name: 'Bungee', value: 'Bungee, sans-serif' }
+];
+
+const loadedFonts = new Set(['Space Grotesk', 'Inter', 'JetBrains Mono']);
+
+function loadGoogleFont(fontFamilyStr) {
+  if (!fontFamilyStr) return;
+  const familyName = fontFamilyStr.split(',')[0].replace(/['"]/g, '').trim();
+  if (!familyName || loadedFonts.has(familyName)) return;
+  loadedFonts.add(familyName);
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(familyName)}:wght@400;600;700;800;900&display=swap`;
+  document.head.appendChild(link);
+  if (document.fonts) {
+    document.fonts.load(`800 24px "${familyName}"`).then(() => {
+      fontsReady = true;
+    });
+  }
+}
+
 // Fullscreen alignment fix: size the playerWrap to the exact video aspect
 // ratio so the canvas (position:absolute inside it) always matches the video
 // 1:1. The fsContainer centers the playerWrap via flexbox. This avoids the
@@ -213,7 +255,7 @@ window.addEventListener('resize', resizeOverlayToVideo);
 function previewLoop() {
   overlayCtx.clearRect(0, 0, els.overlay.width, els.overlay.height);
   if (fontsReady && state.words.length && state.config) {
-    const { activeWords, currentLineStart } = buildFrameWords(state.words, els.video.currentTime, state.wordsPerLine, state.overrides);
+    const { activeWords, currentLineStart, currentWordGlobalIndex } = buildFrameWords(state.words, els.video.currentTime, state.wordsPerLine, state.overrides);
     const preset = getPreset(state.presetId);
     const hitboxOut = [];
     preset.draw(overlayCtx, {
@@ -223,7 +265,9 @@ function previewLoop() {
       activeWords,
       currentLineStart,
       config: state.config,
-      hitboxOut
+      hitboxOut,
+      words: state.words,
+      currentWordGlobalIndex
     });
     state.lastHitboxes = hitboxOut;
     drawSelectionHandles();
@@ -495,10 +539,21 @@ function syncWordEditFields() {
   const ov = ensureOverride(state.selectedWordIndex);
   const w = state.words[state.selectedWordIndex];
   hint.innerHTML = '';
-  const label = document.createElement('div');
-  label.className = 'word-edit-label';
-  label.textContent = `\u201C${w.word}\u201D`;
-  hint.appendChild(label);
+
+  const spellContainer = document.createElement('div');
+  spellContainer.style.marginBottom = '10px';
+  spellContainer.innerHTML = `
+    <label style="font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block;">Spelling / Text</label>
+    <input type="text" id="wSpellingInput" class="spelling-input" value="${w.word.replace(/"/g, '&quot;')}">
+  `;
+  hint.appendChild(spellContainer);
+  const spellInput = spellContainer.querySelector('#wSpellingInput');
+  spellInput.addEventListener('input', e => {
+    w.word = e.target.value;
+    if (els.transcriptBox) els.transcriptBox.textContent = state.words.map(x => x.word).join(' ');
+    const chip = els.wordList.querySelector(`[data-index="${state.selectedWordIndex}"]`);
+    if (chip) chip.textContent = e.target.value;
+  });
 
   const row = document.createElement('div');
   row.className = 'word-edit-row';
@@ -527,6 +582,28 @@ function renderWordList() {
     row.dataset.index = i;
     row.textContent = w.word;
     row.addEventListener('click', () => selectWord(i, { seek: true }));
+    row.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'word-chip-input';
+      input.value = w.word;
+      row.replaceWith(input);
+      input.focus();
+      input.select();
+      const finishEdit = () => {
+        const val = input.value.trim();
+        if (val) {
+          w.word = val;
+          if (els.transcriptBox) els.transcriptBox.textContent = state.words.map(x => x.word).join(' ');
+        }
+        renderWordList();
+      };
+      input.addEventListener('blur', finishEdit);
+      input.addEventListener('keydown', evt => {
+        if (evt.key === 'Enter') finishEdit();
+      });
+    });
     els.wordList.appendChild(row);
   });
 }
@@ -602,9 +679,19 @@ els.transcribeBtn.addEventListener('click', async () => {
 });
 
 // ---------- Style gallery ----------
-function renderStyleGallery() {
+function renderStyleGallery(filterQuery = '') {
   els.styleGrid.innerHTML = '';
-  PRESETS.forEach(preset => {
+  const q = filterQuery.toLowerCase().trim();
+  const filtered = PRESETS.filter(preset =>
+    preset.name.toLowerCase().includes(q) ||
+    preset.blurb.toLowerCase().includes(q) ||
+    preset.id.toLowerCase().includes(q)
+  );
+  if (!filtered.length) {
+    els.styleGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 14px; text-align: center; color: var(--muted); font-size: 12px;">No matching caption styles found</div>';
+    return;
+  }
+  filtered.forEach(preset => {
     const card = document.createElement('button');
     card.className = 'style-card' + (preset.id === state.presetId ? ' selected' : '');
     card.type = 'button';
@@ -626,24 +713,61 @@ function renderStyleGallery() {
   });
 }
 
+els.styleSearchInput?.addEventListener('input', e => {
+  renderStyleGallery(e.target.value);
+});
+
 const demoWords = [
   { word: 'Made', s: 0.0, e: 0.35 }, { word: 'with', s: 0.35, e: 0.6 },
   { word: 'motion', s: 0.6, e: 1.05 }, { word: 'graphics', s: 1.05, e: 1.6 }
 ];
+
 function animateDemoCard(canvas, preset) {
   const ctx = canvas.getContext('2d');
-  const config = { ...preset.defaultConfig, fontSize: preset.id === 'big-word-pop' ? 20 : 22, strokeWidth: Math.min(preset.defaultConfig.strokeWidth, 4), position: 'center' };
-  const loopMs = 2200;
+  const isFocusStack = preset.id === 'focus-stack';
+
+  const config = {
+    ...preset.defaultConfig,
+    fontSize: preset.id === 'big-word-pop' ? 20 : (isFocusStack ? 16 : 22),
+    rowGap: isFocusStack ? 1.4 : preset.defaultConfig.rowGap,
+    strokeWidth: Math.min(preset.defaultConfig.strokeWidth, 3),
+    position: 'center'
+  };
+
+  const loopMs = isFocusStack ? 1800 : 2200;
+
   function frame(ts) {
     const t = ((ts || 0) % loopMs) / 1000;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const words = demoWords.map((w, i) => ({
+
+    const sourceWords = isFocusStack
+      ? [{ word: 'Made', s: 0.0, e: 0.4 }, { word: 'with', s: 0.4, e: 0.8 }, { word: 'motion', s: 0.8, e: 1.4 }]
+      : demoWords;
+
+    const words = sourceWords.map((w, i) => ({
       word: w.word, start: w.s, end: w.e, globalIndex: i,
       active: t >= w.s && t < w.e, hasStarted: t >= w.s,
       progress: Math.max(0, Math.min(1, (t - w.s) / Math.max(0.05, w.e - w.s))),
       overrideX: 0, overrideY: 0, overrideScale: 1
     }));
-    preset.draw(ctx, { width: canvas.width, height: canvas.height, time: t, activeWords: words, currentLineStart: 0, config });
+
+    let curIdx = words.findIndex(w => t >= w.start && t < w.end);
+    if (curIdx === -1) {
+      curIdx = words.findIndex(w => t < w.start);
+      if (curIdx === -1) curIdx = words.length - 1;
+    }
+
+    preset.draw(ctx, {
+      width: canvas.width,
+      height: canvas.height,
+      time: t,
+      activeWords: words,
+      currentLineStart: 0,
+      config,
+      words,
+      currentWordGlobalIndex: curIdx
+    });
+
     if (document.body.contains(canvas)) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -692,11 +816,18 @@ function renderControls() {
       <input type="range" min="0" max="1" step="0.01" value="${c.wordGap ?? 0.40}" data-key="wordGap">
     </div>
     <div class="control-group">
-      <label>Font</label>
-      <div class="segmented" id="ctrlFont">
-        <button data-v="Space Grotesk, sans-serif" class="${c.fontFamily.startsWith('Space Grotesk') ? 'on' : ''}">Grotesk</button>
-        <button data-v="Inter, sans-serif" class="${c.fontFamily.startsWith('Inter') ? 'on' : ''}">Inter</button>
-        <button data-v="JetBrains Mono, monospace" class="${c.fontFamily.startsWith('JetBrains') ? 'on' : ''}">Mono</button>
+      <label>Font (Google Fonts)</label>
+      <div class="font-select-wrap">
+        <select id="ctrlFontSelect" class="font-select">
+          ${GOOGLE_FONTS.map(f => {
+    const isMatch = c.fontFamily === f.value || c.fontFamily.startsWith(f.name);
+    return `<option value="${f.value}" ${isMatch ? 'selected' : ''}>${f.name}</option>`;
+  }).join('')}
+          <option value="custom" ${!GOOGLE_FONTS.some(f => c.fontFamily === f.value || c.fontFamily.startsWith(f.name)) ? 'selected' : ''}>+ Custom Google Font…</option>
+        </select>
+      </div>
+      <div id="customFontWrap" class="${!GOOGLE_FONTS.some(f => c.fontFamily === f.value || c.fontFamily.startsWith(f.name)) ? '' : 'hidden'}" style="margin-top: 6px;">
+        <input type="text" id="customFontInput" placeholder="Enter Google Font e.g. Montserrat" value="${c.fontFamily.split(',')[0].replace(/['"]/g, '')}" class="custom-font-input">
       </div>
     </div>
   `;
@@ -829,12 +960,33 @@ function renderControls() {
       els.controls.querySelectorAll('#ctrlPos button').forEach(b => b.classList.toggle('on', b === btn));
     });
   });
-  els.controls.querySelectorAll('#ctrlFont button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      c.fontFamily = btn.dataset.v;
-      els.controls.querySelectorAll('#ctrlFont button').forEach(b => b.classList.toggle('on', b === btn));
+  const fontSelect = $('#ctrlFontSelect');
+  const customWrap = $('#customFontWrap');
+  const customInput = $('#customFontInput');
+
+  if (fontSelect) {
+    fontSelect.addEventListener('change', e => {
+      const val = e.target.value;
+      if (val === 'custom') {
+        customWrap?.classList.remove('hidden');
+        customInput?.focus();
+      } else {
+        customWrap?.classList.add('hidden');
+        loadGoogleFont(val);
+        c.fontFamily = val;
+      }
     });
-  });
+  }
+
+  if (customInput) {
+    customInput.addEventListener('input', e => {
+      const fontName = e.target.value.trim();
+      if (fontName) {
+        loadGoogleFont(fontName);
+        c.fontFamily = `"${fontName}", sans-serif`;
+      }
+    });
+  }
   els.controls.querySelectorAll('#ctrlWordAnim button').forEach(btn => {
     btn.addEventListener('click', () => {
       c.wordEntryAnim = btn.dataset.v;
@@ -858,8 +1010,8 @@ els.exportBtn.addEventListener('click', async () => {
       videoFile: state.videoFile,
       fps: 30,
       drawFrame: async (ctx, frame) => {
-        const { activeWords, currentLineStart } = buildFrameWords(state.words, frame.time, state.wordsPerLine, state.overrides);
-        preset.draw(ctx, { ...frame, activeWords, currentLineStart, config: state.config });
+        const { activeWords, currentLineStart, currentWordGlobalIndex } = buildFrameWords(state.words, frame.time, state.wordsPerLine, state.overrides);
+        preset.draw(ctx, { ...frame, activeWords, currentLineStart, config: state.config, words: state.words, currentWordGlobalIndex });
       },
       onProgress: (frac, label) => {
         els.progressFill.style.width = `${Math.round(frac * 100)}%`;
@@ -897,4 +1049,6 @@ function goToStep(n) {
   });
 }
 goToStep(1);
+renderStyleGallery();
+selectPreset(state.presetId);
 syncWordEditFields();

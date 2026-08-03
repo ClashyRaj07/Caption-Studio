@@ -1,5 +1,6 @@
 import popKaraoke from './popKaraoke.js';
 import highlightBox from './highlightBox.js';
+import focusStack from './focusStack.js';
 import typewriter from './typewriter.js';
 import bounce from './bounce.js';
 import slideUpLines from './slideUpLines.js';
@@ -22,6 +23,7 @@ import inkStamp from './inkStamp.js';
 
 export const PRESETS = [
   highlightBox,
+  focusStack,
   popKaraoke,
   typewriter,
   bounce,
