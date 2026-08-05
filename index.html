@@ -185,12 +185,33 @@
           <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
       </button>
-      <h3>Connect Standard API key</h3>
-      <p>Get an API key at <a href="https://console.groq.com/keys" target="_blank"
-          rel="noopener">console.groq.com/keys</a> for standard audio transcription.</p>
-      <input type="password" id="keyInput" placeholder="API key…">
+      <h3>Connect Standard API Key</h3>
+
+      <div class="api-guide-card">
+        <div class="api-guide-badge">🎁 100% Free • No Credit Card Required</div>
+        <p class="api-guide-summary">
+          Covers up to <strong>180 hours of free transcription</strong> in a single account! Once limit is reached, simply <strong>create another free account</strong> with a new email to continue using it 100% free.
+        </p>
+        <div class="api-guide-steps">
+          <div class="guide-step">
+            <span class="guide-num">1</span>
+            <span>Click <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="guide-link">console.groq.com/keys</a> to open Groq Console.</span>
+          </div>
+          <div class="guide-step">
+            <span class="guide-num">2</span>
+            <span>Sign up for a free account &amp; click <strong>"Create API Key"</strong>.</span>
+          </div>
+          <div class="guide-step">
+            <span class="guide-num">3</span>
+            <span>Copy your key (starts with <code>gsk_</code>), paste it below, and save.</span>
+          </div>
+        </div>
+      </div>
+
+      <input type="password" id="keyInput" placeholder="Paste your Groq API key here (gsk_...)">
       <div class="modal-actions">
-        <button class="btn btn-primary" id="saveKeyBtn">Save API key</button>
+        <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;">Get Free Key ↗</a>
+        <button class="btn btn-primary" id="saveKeyBtn">Save API Key</button>
       </div>
     </div>
   </div>
@@ -203,12 +224,33 @@
           <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
       </button>
-      <h3>Connect Hinglish API key</h3>
-      <p>Required for 🇮🇳 <strong>Hinglish Mode</strong>. Get an API key at <a href="https://www.assemblyai.com/"
-          target="_blank" rel="noopener">assemblyai.com</a> for Hindi / Hinglish speech recognition.</p>
-      <input type="password" id="assemblyKeyInput" placeholder="API key…">
+      <h3>Connect Hinglish API Key</h3>
+
+      <div class="api-guide-card">
+        <div class="api-guide-badge">🇮🇳 100% Free • Hinglish Speech Mode</div>
+        <p class="api-guide-summary">
+          Covers up to <strong>180 hours of free transcription</strong> in a single account! Once limit is reached, simply <strong>create another free account</strong> with a new email to continue using Hinglish mode for free.
+        </p>
+        <div class="api-guide-steps">
+          <div class="guide-step">
+            <span class="guide-num">1</span>
+            <span>Click <a href="https://www.assemblyai.com/" target="_blank" rel="noopener" class="guide-link">assemblyai.com</a> to open AssemblyAI.</span>
+          </div>
+          <div class="guide-step">
+            <span class="guide-num">2</span>
+            <span>Sign up for a free account (no credit card needed).</span>
+          </div>
+          <div class="guide-step">
+            <span class="guide-num">3</span>
+            <span>Copy your API key from the dashboard, paste it below, and save.</span>
+          </div>
+        </div>
+      </div>
+
+      <input type="password" id="assemblyKeyInput" placeholder="Paste your AssemblyAI API key here...">
       <div class="modal-actions">
-        <button class="btn btn-primary" id="saveAssemblyKeyBtn">Save Hinglish key</button>
+        <a href="https://www.assemblyai.com/" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;">Get Free Key ↗</a>
+        <button class="btn btn-primary" id="saveAssemblyKeyBtn">Save Hinglish Key</button>
       </div>
     </div>
   </div>

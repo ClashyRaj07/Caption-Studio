@@ -35,11 +35,20 @@ block on `file://`.)
 Or drag the folder onto any static host (GitHub Pages, Netlify, Cloudflare
 Pages, Vercel).
 
-## Get a free Groq key
+## Get Free API Keys
 
-1. Go to https://console.groq.com/keys
-2. Create a key (free tier)
-3. Paste it into the app's "Add Groq API key" button
+The app uses **100% free API keys** for speech transcription (no credit card required).
+
+- **Standard Transcription (Groq)**:
+  1. Go to [console.groq.com/keys](https://console.groq.com/keys).
+  2. Create a free account & click **Create API Key**.
+  3. Paste your key into the app's **Add Standard API Key** button.
+- **Hinglish Mode (AssemblyAI)**:
+  1. Go to [assemblyai.com](https://www.assemblyai.com/).
+  2. Create a free account to get your free API key.
+  3. Paste it into the app's **Add Hinglish API Key** modal.
+
+> 💡 **Free Tier Note**: A single free account covers up to **180 hours of free transcription**. If you ever reach the limit or quota on an account, simply create another free account using a different email address to get a new free API key!
 
 ## Caption styles included
 
