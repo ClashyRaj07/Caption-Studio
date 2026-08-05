@@ -49,6 +49,8 @@ The app uses **100% free API keys** for speech transcription (no credit card req
   3. Paste it into the app's **Add Hinglish API Key** modal.
 
 > 💡 **Free Tier Note**: A single free account covers up to **180 hours of free transcription**. If you ever reach the limit or quota on an account, simply create another free account using a different email address to get a new free API key!
+>
+> 🔒 **Privacy First**: Your API keys are saved strictly inside your browser's `localStorage`. They are never sent to or stored on our servers.
 
 ## Caption styles included
 
